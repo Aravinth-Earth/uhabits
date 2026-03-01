@@ -1,0 +1,73 @@
+name: Dev To Overall Progress Sync
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-overall-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout overall-progress
+        uses: actions/checkout@v4
+        with:
+          ref: overall-progress
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch fork dev
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin dev
+
+      - name: Check if dev is ahead of overall-progress
+        id: delta
+        run: |
+          set -euo pipefail
+          ahead="$(git rev-list --count HEAD..refs/remotes/origin/dev)"
+          echo "ahead=$ahead" >> "$GITHUB_OUTPUT"
+
+      - name: Try clean merge and push directly
+        id: merge
+        if: steps.delta.outputs.ahead != '0'
+        run: |
+          set -euo pipefail
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          if git merge --no-edit refs/remotes/origin/dev; then
+            git push origin overall-progress
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR if merge had conflicts
+        if: steps.delta.outputs.ahead != '0' && steps.merge.outputs.merged == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo='${{ github.repository }}'
+          head_ref='dev'
+          base_ref='overall-progress'
+
+          existing_pr="$(gh pr list --repo "$repo" --state open --base "$base_ref" --head "$head_ref" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing_pr" ]; then
+            echo "PR #$existing_pr already open for $head_ref -> $base_ref"
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "$repo" \
+            --base "$base_ref" \
+            --head "$head_ref" \
+            --title "chore(sync): dev into overall-progress (conflicts)" \
+            --body "Automated sync from fork \`dev\` into \`overall-progress\`. Conflicts detected — manual resolution required before merging."
