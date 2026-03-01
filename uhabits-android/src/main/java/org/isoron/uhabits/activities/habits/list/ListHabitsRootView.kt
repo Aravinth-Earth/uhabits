@@ -33,6 +33,7 @@ import org.isoron.uhabits.activities.habits.list.views.HabitCardListView
 import org.isoron.uhabits.activities.habits.list.views.HabitCardListViewFactory
 import org.isoron.uhabits.activities.habits.list.views.HeaderView
 import org.isoron.uhabits.activities.habits.list.views.HintView
+import org.isoron.uhabits.activities.habits.list.views.ProgressSummaryWidget
 import org.isoron.uhabits.core.models.ModelObservable
 import org.isoron.uhabits.core.models.PaletteColor
 import org.isoron.uhabits.core.preferences.Preferences
@@ -60,7 +61,7 @@ const val MAX_CHECKMARK_COUNT = 60
 class ListHabitsRootView @Inject constructor(
     @ActivityContext context: Context,
     hintListFactory: HintListFactory,
-    preferences: Preferences,
+    private val preferences: Preferences,
     midnightTimer: MidnightTimer,
     runner: TaskRunner,
     private val listAdapter: HabitCardListAdapter,
@@ -76,17 +77,25 @@ class ListHabitsRootView @Inject constructor(
     val progressBar = TaskProgressBar(context, runner)
     val hintView: HintView
     val header = HeaderView(context, preferences, midnightTimer)
+    val progressWidget = ProgressSummaryWidget(context)
 
     init {
         val hints = resources.getStringArray(R.array.hints)
         val hintList = hintListFactory.create(hints)
         hintView = HintView(context, hintList)
 
+        progressWidget.visibility = if (preferences.showProgressWidget) VISIBLE else GONE
+
         val rootView = RelativeLayout(context).apply {
             background = sres.getDrawable(R.attr.windowBackgroundColor)
             addAtTop(konfettiView)
             addAtTop(tbar)
-            addBelow(header, tbar)
+            addBelow(progressWidget, tbar) {
+                it.topMargin = dp(0.0f).toInt()
+            }
+            addBelow(header, progressWidget)
+            // Fix: Anchor listView and llEmpty to header, not progressWidget
+            // This ensures first habit is not hidden when progressWidget is visible
             addBelow(listView, header, height = MATCH_PARENT)
             addBelow(llEmpty, header, height = MATCH_PARENT)
             addBelow(progressBar, header) {
@@ -107,6 +116,54 @@ class ListHabitsRootView @Inject constructor(
 
     override fun onModelChange() {
         updateEmptyView()
+        updateProgressWidget()
+    }
+
+    fun updateProgressWidget() {
+        if (!preferences.showProgressWidget || progressWidget.visibility != VISIBLE) return
+
+        // This will be called from ListHabitsScreen with proper data
+        // For now, just mark it visible
+    }
+
+    fun setProgressWidgetSummary(
+        todayScore: Double,
+        yesterdayScore: Double,
+        todayCompleted: Int,
+        todayDue: Int,
+        yesterdayStreakLength: Int,
+        projectedStreakLength: Int,
+        todayScoreRank: Int,
+        todayProgressRank: Int,
+        todayCompletionRank: Int,
+        todayScoreRankTotal: Int,
+        todayProgressRankTotal: Int,
+        todayCompletionRankTotal: Int,
+        todayStreakRank: Int,
+        todayStreakRankTotal: Int,
+        maxAbsProgressChange: Double
+    ) {
+        progressWidget.setSummaryData(
+            todayScore = todayScore,
+            yesterdayScore = yesterdayScore,
+            todayCompleted = todayCompleted,
+            todayDue = todayDue,
+            yesterdayStreakLength = yesterdayStreakLength,
+            projectedStreakLength = projectedStreakLength,
+            todayScoreRank = todayScoreRank,
+            todayProgressRank = todayProgressRank,
+            todayCompletionRank = todayCompletionRank,
+            todayScoreRankTotal = todayScoreRankTotal,
+            todayProgressRankTotal = todayProgressRankTotal,
+            todayCompletionRankTotal = todayCompletionRankTotal,
+            todayStreakRank = todayStreakRank,
+            todayStreakRankTotal = todayStreakRankTotal,
+            maxAbsProgressChange = maxAbsProgressChange
+        )
+    }
+
+    fun setProgressWidgetClickListener(listener: () -> Unit) {
+        progressWidget.setOnDetailsClickListener(listener)
     }
 
     private fun setupControllers() {

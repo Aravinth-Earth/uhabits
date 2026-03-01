@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2016-2025 Álinson Santos Xavier <git@axavier.org>
+  ~
+  ~ This file is part of Loop Habit Tracker.
+  ~
+  ~ Loop Habit Tracker is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by the
+  ~ Free Software Foundation, either version 3 of the License, or (at your
+  ~ option) any later version.
+  ~
+  ~ Loop Habit Tracker is distributed in the hope that it will be useful, but
+  ~ WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+  ~ more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License along
+  ~ with this program. If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        style="@style/Toolbar"
+        app:popupTheme="?toolbarPopupTheme"
+        android:layout_alignParentTop="true"/>
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar"
+        android:background="?windowBackgroundColor"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            style="@style/CardList"
+            android:id="@+id/linearLayout"
+            android:clipToPadding="false">
+
+            <TextView
+                android:id="@+id/progressSectionTitle"
+                style="@style/ProgressSectionHeader"
+                android:text="@string/progress_section_title"
+                android:layout_marginTop="0dp"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressStatsCardView
+                android:id="@+id/statsCard"
+                style="@style/Card"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressDeltaCardView
+                android:id="@+id/deltaCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressRankCardView
+                android:id="@+id/progressRankCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressHistoryCardView
+                android:id="@+id/historyCard"
+                style="@style/Card"
+                android:gravity="center"
+                android:paddingBottom="0dp"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressFrequencyCardView
+                android:id="@+id/frequencyCard"
+                style="@style/Card"/>
+
+            <TextView
+                android:id="@+id/streakSectionTitle"
+                style="@style/ProgressSectionHeader"
+                android:text="@string/streak_by_progress_section_title"
+                android:layout_marginTop="8dp"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressRankCardView
+                android:id="@+id/streakRankCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.BestStreakCardView
+                android:id="@+id/streakCard"
+                style="@style/Card"/>
+
+            <TextView
+                android:id="@+id/scoreSectionTitle"
+                style="@style/ProgressSectionHeader"
+                android:text="@string/day_score_section_title"
+                android:layout_marginTop="8dp"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressRankCardView
+                android:id="@+id/scoreRankCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressScoreCardView
+                android:id="@+id/scoreCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressBarCardView
+                android:id="@+id/barCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+            <TextView
+                android:id="@+id/completionSectionTitle"
+                style="@style/ProgressSectionHeader"
+                android:text="@string/completion_section_title"
+                android:layout_marginTop="8dp"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressCompletionStatsCardView
+                android:id="@+id/completionStatsCard"
+                style="@style/Card"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressRankCardView
+                android:id="@+id/completionRankCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressCompletionStreakCardView
+                android:id="@+id/completionStreakCard"
+                style="@style/Card"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressCompletionHistoryCardView
+                android:id="@+id/completionHistoryCard"
+                style="@style/Card"
+                android:gravity="center"
+                android:paddingBottom="0dp"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressCompletionBarCardView
+                android:id="@+id/completionBarCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressCompletionFrequencyCardView
+                android:id="@+id/completionFrequencyCard"
+                style="@style/Card"/>
+
+            <TextView
+                android:id="@+id/overallSectionTitle"
+                style="@style/ProgressSectionHeader"
+                android:text="@string/overall_section_title"
+                android:layout_marginTop="8dp"/>
+
+            <org.isoron.uhabits.activities.habits.progress.views.ProgressRankCardView
+                android:id="@+id/overallRankCard"
+                style="@style/Card"
+                android:gravity="center"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Empty State -->
+    <LinearLayout
+        android:id="@+id/emptyStateView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:src="@drawable/ic_action_check"
+            android:alpha="0.3"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/progress_empty_message"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="16sp"
+            android:gravity="center"/>
+    </LinearLayout>
+
+</RelativeLayout>

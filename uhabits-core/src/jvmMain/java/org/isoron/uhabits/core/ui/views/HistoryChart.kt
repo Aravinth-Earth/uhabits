@@ -27,6 +27,7 @@ import org.isoron.platform.time.DayOfWeek
 import org.isoron.platform.time.LocalDate
 import org.isoron.platform.time.LocalDateFormatter
 import org.isoron.uhabits.core.models.PaletteColor
+import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -47,7 +48,10 @@ class HistoryChart(
     var theme: Theme,
     var today: LocalDate,
     var onDateClickedListener: OnDateClickedListener = object : OnDateClickedListener {},
-    var padding: Double = 0.0
+    var padding: Double = 0.0,
+    var scoreValues: List<Double>? = null,
+    var bipolarMode: Boolean = false,
+    var negativePaletteColor: PaletteColor? = null
 ) : DataView {
 
     enum class Square {
@@ -209,18 +213,31 @@ class HistoryChart(
         val squareColor: Color
         val circleColor: Color
         val color = theme.color(paletteColor.paletteIndex)
-        squareColor = when (value) {
-            Square.ON -> {
+
+        // Use continuous gradient if scoreValues provided, otherwise use discrete Square enum
+        squareColor = if (scoreValues != null && offset < scoreValues!!.size) {
+            val rawScore = scoreValues!![offset]
+            val magnitude = abs(rawScore).coerceIn(0.0, 1.0)
+            val baseColor = if (bipolarMode && rawScore < 0 && negativePaletteColor != null) {
+                theme.color(negativePaletteColor!!)
+            } else {
                 color
             }
-            Square.OFF -> {
-                theme.lowContrastTextColor
-            }
-            Square.GREY -> {
-                theme.mediumContrastTextColor
-            }
-            Square.DIMMED, Square.HATCHED -> {
-                color.blendWith(theme.cardBackgroundColor, 0.5)
+            baseColor.blendWith(theme.cardBackgroundColor, 1.0 - magnitude)
+        } else {
+            when (value) {
+                Square.ON -> {
+                    color
+                }
+                Square.OFF -> {
+                    theme.lowContrastTextColor
+                }
+                Square.GREY -> {
+                    theme.mediumContrastTextColor
+                }
+                Square.DIMMED, Square.HATCHED -> {
+                    color.blendWith(theme.cardBackgroundColor, 0.5)
+                }
             }
         }
 
