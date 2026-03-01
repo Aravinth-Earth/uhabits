@@ -1,0 +1,75 @@
+name: Upstream Dev Sync
+
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          # PAT required: pushes via GITHUB_TOKEN do not trigger other workflows.
+          # Create a PAT with 'repo' scope and store it as secret SYNC_PAT.
+          token: ${{ secrets.SYNC_PAT }}
+
+      - name: Fetch upstream dev
+        run: |
+          set -euo pipefail
+          git remote add upstream https://github.com/iSoron/uhabits.git || true
+          git fetch --no-tags upstream dev
+
+      - name: Check if upstream is ahead
+        id: delta
+        run: |
+          set -euo pipefail
+          ahead="$(git rev-list --count HEAD..refs/remotes/upstream/dev)"
+          echo "ahead=$ahead" >> "$GITHUB_OUTPUT"
+
+      - name: Try clean merge and push directly
+        id: merge
+        if: steps.delta.outputs.ahead != '0'
+        run: |
+          set -euo pipefail
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          if git merge --no-edit refs/remotes/upstream/dev; then
+            git push origin dev
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR if merge had conflicts
+        if: steps.delta.outputs.ahead != '0' && steps.merge.outputs.merged == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo='${{ github.repository }}'
+          head_ref='iSoron:dev'
+          base_ref='dev'
+
+          existing_pr="$(gh pr list --repo "$repo" --state open --base "$base_ref" --head "$head_ref" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing_pr" ]; then
+            echo "PR #$existing_pr already open for $head_ref -> $base_ref"
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "$repo" \
+            --base "$base_ref" \
+            --head "$head_ref" \
+            --title "chore(sync): upstream dev into fork dev (conflicts)" \
+            --body "Automated sync from upstream \`dev\` branch. Conflicts detected — manual resolution required before merging."
