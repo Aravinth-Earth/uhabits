@@ -49,7 +49,6 @@
         <item quantity="other">Habits unarchived</item>
     </plurals>
     <string name="title_activity_show_habit" translatable="false"/>
-    <string name="overview">Overview</string>
     <string name="habit_strength">Habit strength</string>
     <string name="history">History</string>
     <string name="clear">Clear</string>
@@ -128,6 +127,49 @@
     <string name="every_day">Every day</string>
     <string name="every_week">Every week</string>
     <string name="help">Help &amp; FAQ</string>
+    <string name="overview">Overview</string>
+    <string name="progress">Progress</string>
+    <string name="progress_empty_message">Start adding habits to see the overall progress trend</string>
+    <string name="progress_history">Calendar</string>
+    <string name="progress_change">Change</string>
+    <string name="progress_change_not_enough_data">Not enough data to show change for this interval</string>
+    <string name="progress_frequency">Frequency</string>
+    <string name="day_score_section_title">Day Score</string>
+    <string name="day_score_history_title">History</string>
+    <string name="progress_section_title">Progress</string>
+    <string name="progress_label">Progress</string>
+    <string name="stats_title">Stats</string>
+    <string name="daily_progress_title">Daily Progress</string>
+    <string name="streak_by_progress_label">Progress Streak</string>
+    <string name="streak_by_progress_section_title">Progress Streak</string>
+    <string name="completion_section_title">Completion Rate</string>
+    <string name="completion_streaks_empty">No perfect completion streaks yet</string>
+    <string name="rank_one_best">1 = best</string>
+    <string name="rank_score_title">Rank</string>
+    <string name="rank_progress_title">Rank</string>
+    <string name="rank_streak_title">Rank</string>
+    <string name="rank_completion_title">Rank</string>
+    <string name="rank_overall_title">Ranks</string>
+    <string name="rank_overall_subtitle">Score / Progress / Completion (1 = best)</string>
+    <string name="overall_section_title">Overall</string>
+    <string name="completion_summary">Completion</string>
+    <string name="completion_history">History</string>
+    <string name="completion_calendar">Calendar</string>
+    <string name="completion_frequency">Frequency</string>
+    <string name="completion_streaks">Best Streak</string>
+    <string name="progress_summary">Today\'s Progress: %s%%</string>
+    <string name="show_progress_widget">Show Progress Widget</string>
+    <string name="show_progress_widget_summary">Display live progress indicator on main screen</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="today">Today</string>
+    <string name="change">Change</string>
+    <string name="last_7_days">Last 7 days</string>
+    <string name="last_30_days">Last 30 days</string>
+    <string name="last_60_days">Last 60 days</string>
+    <string name="last_90_days">Last 90 days</string>
+    <string name="last_180_days">Last 180 days</string>
+    <string name="last_365_days">Last 365 days</string>
+    <string name="all_time">All time</string>
     <string name="could_not_export">Failed to export data.</string>
     <string name="could_not_import">Failed to import data.</string>
     <string name="file_not_recognized">File not recognized.</string>
@@ -219,7 +261,6 @@
     <string name="measurable_units_example">e.g. miles</string>
     <string name="every_month">Every month</string>
     <string name="validation_cannot_be_blank">Cannot be blank</string>
-    <string name="today">Today</string>
     <string name="enter">Enter</string>
     <string name="no_habits">No habits found</string>
     <string name="no_numerical_habits">No measurable habits found</string>
@@ -237,4 +278,9 @@
     <string name="pref_midnight_delay_description">Wait until 3:00 AM to show a new day. Useful if you typically go to sleep after midnight. Requires app restart.</string>
     <string name="pref_animations_title">Disable animations</string>
     <string name="pref_animations_description">Disable confetti animation after adding a checkmark.</string>
+    <string name="insight_strong_week">Strong week of progress!</string>
+    <string name="insight_steady">Steady and consistent!</string>
+    <string name="insight_same">Take it one day at a time.</string>
+    <string name="insight_encourage">You can do this!</string>
+    
 </resources>

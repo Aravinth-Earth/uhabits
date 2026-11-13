@@ -84,6 +84,42 @@ open class Preferences(private val storage: Storage) {
         set(position) {
             storage.putInt("pref_bar_card_numerical_spinner", position)
         }
+    var progressScoreSpinnerPosition: Int
+        get() {
+            // Try new key first, then fallback to old key for migration
+            val newValue = storage.getInt("pref_progress_score_spinner", -1)
+            if (newValue < 0) {
+                val oldValue = storage.getInt("pref_overview_score_spinner", 1)
+                return min(4, max(0, oldValue))
+            }
+            return min(4, max(0, newValue))
+        }
+        set(position) {
+            storage.putInt("pref_progress_score_spinner", position)
+        }
+    var progressBarSpinnerPosition: Int
+        get() {
+            // Try new key first, then fallback to old key for migration
+            val newValue = storage.getInt("pref_progress_bar_spinner", -1)
+            if (newValue < 0) {
+                val oldValue = storage.getInt("pref_overview_bar_spinner", 1)
+                return min(4, max(0, oldValue))
+            }
+            return min(4, max(0, newValue))
+        }
+        set(position) {
+            storage.putInt("pref_progress_bar_spinner", position)
+        }
+    var progressDeltaSpinnerPosition: Int
+        get() = min(4, max(0, storage.getInt("pref_progress_delta_spinner", 0)))
+        set(position) {
+            storage.putInt("pref_progress_delta_spinner", position)
+        }
+    var showProgressWidget: Boolean
+        get() = storage.getBoolean("pref_show_progress_widget", false)
+        set(value) {
+            storage.putBoolean("pref_show_progress_widget", value)
+        }
     val lastHintNumber: Int
         get() = storage.getInt("last_hint_number", -1)
     open val lastHintTimestamp: Timestamp?

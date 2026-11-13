@@ -23,6 +23,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 import dagger.Lazy
@@ -102,7 +104,8 @@ class ListHabitsScreen
     private val colorPickerFactory: ColorPickerDialogFactory,
     private val behavior: Lazy<ListHabitsBehavior>,
     private val preferences: Preferences,
-    private val rootView: Lazy<ListHabitsRootView>
+    private val rootView: Lazy<ListHabitsRootView>,
+    private val habitList: org.isoron.uhabits.core.models.HabitList
 ) : CommandRunner.Listener,
     ListHabitsBehavior.Screen,
     ListHabitsMenuBehavior.Screen,
@@ -110,17 +113,170 @@ class ListHabitsScreen
 
     val activity = (context as AppCompatActivity)
 
+    // Debounce handler to prevent excessive progress widget updates
+    private val updateHandler = Handler(Looper.getMainLooper())
+    private var updateRunnable: Runnable? = null
+
     fun onAttached() {
         commandRunner.addListener(this)
+        setupProgressWidget()
+        updateProgressWidget()
     }
 
     fun onDetached() {
         commandRunner.removeListener(this)
+        // Cancel any pending progress widget updates to prevent leaks
+        updateRunnable?.let { updateHandler.removeCallbacks(it) }
+        updateRunnable = null
     }
 
     override fun onCommandFinished(command: Command) {
         val msg = getExecuteString(command)
         if (msg != null) activity.showMessage(msg)
+        updateProgressWidget()
+    }
+
+    private fun setupProgressWidget() {
+        rootView.get().setProgressWidgetClickListener {
+            showProgressScreen()
+        }
+    }
+
+    private fun updateProgressWidget() {
+        if (!preferences.showProgressWidget) return
+
+        // Cancel any pending update to debounce rapid calls
+        updateRunnable?.let { updateHandler.removeCallbacks(it) }
+
+        // Schedule new update with 300ms delay to debounce multiple rapid updates
+        updateRunnable = Runnable {
+            doUpdateProgressWidget()
+        }
+        updateHandler.postDelayed(updateRunnable!!, 300)
+    }
+
+    private fun doUpdateProgressWidget() {
+        if (!preferences.showProgressWidget) return
+
+        taskRunner.run {
+            val activeHabits = habitList.getFiltered(
+                org.isoron.uhabits.core.models.HabitMatcher(isArchivedAllowed = false)
+            )
+
+            if (activeHabits.size() == 0) {
+                activity.runOnUiThread {
+                    rootView.get().setProgressWidgetSummary(
+                        todayScore = 0.0,
+                        yesterdayScore = 0.0,
+                        todayCompleted = 0,
+                        todayDue = 0,
+                        yesterdayStreakLength = 0,
+                        projectedStreakLength = 0,
+                        todayScoreRank = 0,
+                        todayProgressRank = 0,
+                        todayCompletionRank = 0,
+                        todayScoreRankTotal = 0,
+                        todayProgressRankTotal = 0,
+                        todayCompletionRankTotal = 0,
+                        todayStreakRank = 0,
+                        todayStreakRankTotal = 0,
+                        maxAbsProgressChange = 0.0
+                    )
+                }
+                return@run
+            }
+
+            // getTodayWithOffset respects midnight delay: if enabled and before 3am, this returns previous day
+            val today = org.isoron.uhabits.core.utils.DateUtils.getTodayWithOffset()
+            val yesterday = today.minus(1)
+
+            val calculator = org.isoron.uhabits.activities.habits.progress.AggregateScoreCalculator()
+
+            // Calculate today's and yesterday's scores
+            val todayScores = calculator.computeAggregateScores(activeHabits.toList(), today, today)
+            val yesterdayScores = calculator.computeAggregateScores(activeHabits.toList(), yesterday, yesterday)
+
+            val todayScore = todayScores.firstOrNull()?.value ?: 0.0
+            val yesterdayScore = yesterdayScores.firstOrNull()?.value ?: 0.0
+
+            val completionSummaries = calculator.computeAggregateCompletionSummaries(
+                activeHabits.toList(),
+                today,
+                today
+            )
+            val completionToday = completionSummaries.firstOrNull()
+
+            val todayCompleted = completionToday?.completedCount ?: 0
+            val todayDue = completionToday?.dueCount ?: 0
+
+            val earliestDate = calculator.findEarliestHabitDate(activeHabits.toList(), today)
+            val historyScoresAll = calculator.computeAggregateScores(activeHabits.toList(), earliestDate, today)
+            val progressChangesAll = calculator.computeAggregateProgressChanges(
+                activeHabits.toList(),
+                earliestDate,
+                today
+            )
+            val maxAbsProgressChange = (progressChangesAll.maxOfOrNull { kotlin.math.abs(it.value) } ?: 0.0) * 100
+            val completionHistoryAll = calculator.computeAggregateCompletionSummaries(
+                activeHabits.toList(),
+                earliestDate,
+                today
+            )
+            val improvementStreaksAll = calculator.computeImprovementStreakLengths(historyScoresAll)
+            val scoreRanks = calculator.computeDescendingRanks(
+                historyScoresAll.map { it.timestamp to it.value }
+            )
+            val progressRanks = calculator.computeDescendingRanks(
+                progressChangesAll.map { it.timestamp to it.value }
+            )
+            val completionRanks = calculator.computeDescendingRanks(
+                completionHistoryAll.map { summary ->
+                    summary.timestamp to if (summary.dueCount > 0) summary.completionRatio else null
+                }
+            )
+            val streakRanks = calculator.computeDescendingRanks(
+                improvementStreaksAll.map { it.timestamp to it.value }
+            )
+            val scoreRankTotal = historyScoresAll.map { it.value }.distinct().size
+            val progressRankTotal = progressChangesAll.map { it.value }.distinct().size
+            val completionRankTotal = completionHistoryAll.mapNotNull { summary ->
+                if (summary.dueCount > 0) summary.completionRatio else null
+            }.distinct().size
+            val streakRankTotal = improvementStreaksAll.map { it.value }.distinct().size
+            val todayScoreRank = scoreRanks[today] ?: 0
+            val todayProgressRank = progressRanks[today] ?: 0
+            val todayCompletionRank = completionRanks[today] ?: 0
+            val todayStreakRank = streakRanks[today] ?: 0
+
+            val yesterdayStreakLength = improvementStreaksAll
+                .firstOrNull { it.timestamp == yesterday }
+                ?.value
+                ?.toInt() ?: 0
+            val projectedStreakLength = improvementStreaksAll
+                .firstOrNull { it.timestamp == today }
+                ?.value
+                ?.toInt() ?: 0
+
+            activity.runOnUiThread {
+                rootView.get().setProgressWidgetSummary(
+                    todayScore = todayScore,
+                    yesterdayScore = yesterdayScore,
+                    todayCompleted = todayCompleted,
+                    todayDue = todayDue,
+                    yesterdayStreakLength = yesterdayStreakLength,
+                    projectedStreakLength = projectedStreakLength,
+                    todayScoreRank = todayScoreRank,
+                    todayProgressRank = todayProgressRank,
+                    todayCompletionRank = todayCompletionRank,
+                    todayScoreRankTotal = scoreRankTotal,
+                    todayProgressRankTotal = progressRankTotal,
+                    todayCompletionRankTotal = completionRankTotal,
+                    todayStreakRank = todayStreakRank,
+                    todayStreakRankTotal = streakRankTotal,
+                    maxAbsProgressChange = maxAbsProgressChange
+                )
+            }
+        }
     }
 
     fun onResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -152,6 +308,12 @@ class ListHabitsScreen
             RESULT_EXPORT_DB -> onExportDB()
             RESULT_BUG_REPORT -> behavior.get().onSendBugReport()
             RESULT_REPAIR_DB -> behavior.get().onRepairDB()
+        }
+        // Update widget visibility after settings change
+        val visibility = if (preferences.showProgressWidget) android.view.View.VISIBLE else android.view.View.GONE
+        rootView.get().progressWidget.visibility = visibility
+        if (preferences.showProgressWidget) {
+            updateProgressWidget()
         }
     }
 
@@ -259,6 +421,11 @@ class ListHabitsScreen
     override fun showSettingsScreen() {
         val intent = intentFactory.startSettingsActivity(activity)
         activity.startActivityForResult(intent, REQUEST_SETTINGS)
+    }
+
+    override fun showProgressScreen() {
+        val intent = Intent(activity, org.isoron.uhabits.activities.habits.progress.ProgressActivity::class.java)
+        activity.startActivity(intent)
     }
 
     override fun showColorPicker(defaultColor: PaletteColor, callback: OnColorPickedCallback) {

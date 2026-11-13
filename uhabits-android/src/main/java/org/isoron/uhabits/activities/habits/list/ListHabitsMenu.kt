@@ -109,6 +109,11 @@ class ListHabitsMenu @Inject constructor(
                 return true
             }
 
+            R.id.actionProgress -> {
+                behavior.onViewProgress()
+                return true
+            }
+
             R.id.actionHideArchived -> {
                 behavior.onToggleShowArchived()
                 activity.invalidateOptionsMenu()

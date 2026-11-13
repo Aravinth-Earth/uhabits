@@ -1,0 +1,4 @@
+$env:JAVA_HOME="C:\Users\w11-d\scoop\apps\openjdk17\current"
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+./gradlew --version
+./gradlew assembleDebug --stacktrace

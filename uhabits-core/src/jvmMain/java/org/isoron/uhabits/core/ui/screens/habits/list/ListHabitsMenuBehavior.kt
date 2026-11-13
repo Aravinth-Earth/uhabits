@@ -49,6 +49,10 @@ class ListHabitsMenuBehavior @Inject constructor(
         screen.showSettingsScreen()
     }
 
+    fun onViewProgress() {
+        screen.showProgressScreen()
+    }
+
     fun onToggleShowArchived() {
         showArchived = !showArchived
         preferences.showArchived = showArchived
@@ -132,6 +136,7 @@ class ListHabitsMenuBehavior @Inject constructor(
         fun showAboutScreen()
         fun showFAQScreen()
         fun showSettingsScreen()
+        fun showProgressScreen()
         fun showSelectHabitTypeDialog()
     }
 
